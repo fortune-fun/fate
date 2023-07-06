@@ -7,7 +7,7 @@ import (
 	"github.com/godcong/yi"
 )
 
-//XiYong 喜用神
+// XiYong 喜用神
 type XiYong struct {
 	WuXingFen          map[string]int
 	Similar            []string //同类
@@ -19,7 +19,7 @@ type XiYong struct {
 var sheng = []string{"木", "火", "土", "金", "水"}
 var ke = []string{"木", "土", "水", "火", "金"}
 
-//AddFen 五行分
+// AddFen 五行分
 func (xy *XiYong) AddFen(s string, point int) {
 	if xy.WuXingFen == nil {
 		xy.WuXingFen = make(map[string]int)
@@ -32,7 +32,7 @@ func (xy *XiYong) AddFen(s string, point int) {
 	}
 }
 
-//GetFen 取得分
+// GetFen 取得分
 func (xy *XiYong) GetFen(s string) (point int) {
 	if xy.WuXingFen == nil {
 		return 0
@@ -56,7 +56,7 @@ func (xy *XiYong) minFenWuXing(ss ...string) (wx string) {
 	return
 }
 
-//Shen 喜用神
+// Shen 喜用神
 func (xy *XiYong) Shen() string {
 	if !xy.QiangRuo() {
 		return xy.minFenWuXing(xy.Similar...)
@@ -64,7 +64,7 @@ func (xy *XiYong) Shen() string {
 	return xy.minFenWuXing(xy.Heterogeneous...)
 }
 
-//QiangRuo 八字偏强（true)弱（false）
+// QiangRuo 八字偏强（true)弱（false）
 func (xy *XiYong) QiangRuo() bool {
 	return xy.SimilarPoint > xy.HeterogeneousPoint
 }
@@ -78,38 +78,63 @@ func filterXiYong(yong string, cs ...*Character) (b bool) {
 	return false
 }
 
-//过滤喜用神，目前支持倒序前两个
-//输入的喜用神序列必须是有倾向的，如果是若干种五行平分，则不能进行硬过滤
+// 过滤喜用神，目前支持倒序前两个
+// 输入的喜用神序列必须是有倾向的，如果是若干种五行平分，则不能进行硬过滤
 func fixedFilterXiYong(yong string, hard_filter bool, cs ...*Character) (b bool) {
 	wuxing_count_yong := yi.CountWuxing(nil, yong)
 
-	wuxing_count_yong = yi.SortWuxingCount(wuxing_count_yong)
+	wuxing_count_yong_sorted := yi.SortWuxingCount(wuxing_count_yong)
 
-	if wuxing_count_yong.Content[0].Count == 0 {
+	if wuxing_count_yong_sorted.Content[0].Count == 0 {
 		panic("没有输入喜用神")
 	}
 
-	wuxing_count_got := yi.CountWuxing(nil, "")
+	wuxing_str_got := ""
 
 	for _, c := range cs {
-		wuxing_count_got = yi.CountWuxing(wuxing_count_got, c.WuXing)
+		wuxing_str_got = wuxing_str_got + c.WuXing
 	}
 
-	wuxing_count_got = yi.SortWuxingCount(wuxing_count_got)
+	wuxing_count_got := yi.CountWuxing(nil, wuxing_str_got)
 
-	if wuxing_count_yong.Content[1].Count == 0 {
-		if wuxing_count_yong.Content[0].WuXingChr == wuxing_count_got.Content[0].WuXingChr {
-			return true
-		}
+	wuxing_count_diff := 0
+
+	wuxing_count_diff_jin := wuxing_count_got.Index[yi.WuXingJinChar].Count - wuxing_count_yong.Index[yi.WuXingJinChar].Count
+	if wuxing_count_diff_jin < 0 {
+		wuxing_count_diff_jin = -wuxing_count_diff_jin
+	}
+	wuxing_count_diff += wuxing_count_diff_jin
+
+	wuxing_count_diff_mu := wuxing_count_got.Index[yi.WuXingMuChar].Count - wuxing_count_yong.Index[yi.WuXingMuChar].Count
+	if wuxing_count_diff_mu < 0 {
+		wuxing_count_diff_mu = -wuxing_count_diff_mu
+	}
+	wuxing_count_diff += wuxing_count_diff_mu
+
+	wuxing_count_diff_shui := wuxing_count_got.Index[yi.WuXingShuiChar].Count - wuxing_count_yong.Index[yi.WuXingShuiChar].Count
+	if wuxing_count_diff_shui < 0 {
+		wuxing_count_diff_shui = -wuxing_count_diff_shui
+	}
+	wuxing_count_diff += wuxing_count_diff_shui
+
+	wuxing_count_diff_huo := wuxing_count_got.Index[yi.WuXingHuoChar].Count - wuxing_count_yong.Index[yi.WuXingHuoChar].Count
+	if wuxing_count_diff_huo < 0 {
+		wuxing_count_diff_huo = -wuxing_count_diff_huo
+	}
+	wuxing_count_diff += wuxing_count_diff_jin
+
+	wuxing_count_diff_tu := wuxing_count_got.Index[yi.WuXingTuChar].Count - wuxing_count_yong.Index[yi.WuXingTuChar].Count
+	if wuxing_count_diff_tu < 0 {
+		wuxing_count_diff_tu = -wuxing_count_diff_tu
+	}
+	wuxing_count_diff += wuxing_count_diff_tu
+
+	if wuxing_count_diff == 0 {
+		return true
 	} else {
-		if wuxing_count_yong.Content[1].WuXingChr == wuxing_count_got.Content[1].WuXingChr {
-			return true
-		} else {
-			if !hard_filter {
-				if wuxing_count_yong.Content[0].WuXingChr == wuxing_count_got.Content[1].WuXingChr &&
-					wuxing_count_yong.Content[1].WuXingChr == wuxing_count_got.Content[0].WuXingChr {
-					return true
-				}
+		if !hard_filter {
+			if wuxing_count_diff == 1 {
+				return true
 			}
 		}
 	}
