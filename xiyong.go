@@ -121,7 +121,7 @@ func fixedFilterXiYong(yong string, hard_filter bool, cs ...*Character) (b bool)
 	if wuxing_count_diff_huo < 0 {
 		wuxing_count_diff_huo = -wuxing_count_diff_huo
 	}
-	wuxing_count_diff += wuxing_count_diff_jin
+	wuxing_count_diff += wuxing_count_diff_huo
 
 	wuxing_count_diff_tu := wuxing_count_got.Index[yi.WuXingTuChar].Count - wuxing_count_yong.Index[yi.WuXingTuChar].Count
 	if wuxing_count_diff_tu < 0 {
